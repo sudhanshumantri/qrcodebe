@@ -13,3 +13,9 @@ exports.scan = async function (req, res) {
     return res.send(response);
 
 }
+exports.ok = async function (req, res) {
+    return res.send({
+        OK
+    });
+
+}

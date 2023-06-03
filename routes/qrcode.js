@@ -25,4 +25,6 @@ var storage = multer.diskStorage({
 var uploads = multer({ storage: storage })
 router.post('/uploadcsv',uploads.single('uploadcsv'),qrCodeHandlers.generate);
 router.post('/scan', qrCodeHandlers.scan);
+router.post('/ok', qrCodeHandlers.ok);
+
 module.exports = router;
