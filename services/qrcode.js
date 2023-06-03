@@ -35,7 +35,7 @@ class QrCodeServices {
                             userToProcess.push({
                                 name,
                                 phone,
-                                role,
+                                status:role,
                                 qrCode: s3url
                             })
                         }
