@@ -78,7 +78,7 @@ class QrCodeServices {
                     msg: "This QR code is already used"
                 }
             }
-            await qrcodeSchema.updateOne({ 'phone': phone }, { $set: { isScaneDone: true } });
+            await QRcodeSchema.updateOne({ 'phone': phone }, { $set: { isScaneDone: true } });
             return {
                 status: true,
                 data: userDataInDb
