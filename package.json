@@ -16,9 +16,11 @@
     "body-parser": "^1.20.0",
     "cors": "^2.8.5",
     "express": "^4.18.1",
+    "fast-csv": "^4.3.6",
     "http-errors": "^2.0.0",
     "jimp": "^0.22.8",
     "mongoose": "^6.11.1",
+    "multer": "^1.4.5-lts.1",
     "qrcode": "^1.5.3",
     "qrcode-reader": "^1.0.4",
     "uuid": "^9.0.0"

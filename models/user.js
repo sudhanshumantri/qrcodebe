@@ -1,7 +1,7 @@
 const mongoose =require('mongoose');
 const Schema = mongoose.Schema;
 
-const userSchema = new Schema({
+const qrcodeSchema = new Schema({
     name : {
        type : String
     },
@@ -16,11 +16,14 @@ const userSchema = new Schema({
     isScaneDone: {
       type: Boolean
     },
+    qrCode:{
+      type: String
+    }
 },
 {
-   collection: 'user'
+   collection: 'qrcode'
     
 }
 );
 
-module.exports = mongoose.model('user', userSchema)
+module.exports = mongoose.model('qrcode', qrcodeSchema)

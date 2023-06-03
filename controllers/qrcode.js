@@ -2,7 +2,9 @@ const QrCodeServices = require('../services/qrcode');
 const QrCodeServicesInstance = new QrCodeServices();
 
 exports.generate = async function (req, res) {
-    let response = await QrCodeServicesInstance.generate(req.body);
+   let filePath=process.cwd() + '/uploads/' + req.file.filename;
+   console.log('filePath',process.cwd());
+    let response = await QrCodeServicesInstance.generate(req,filePath);
     return res.send(response);
 
 }

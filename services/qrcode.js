@@ -5,51 +5,80 @@ const {
 } = require('uuid');
 const AWS = require('aws-sdk');
 const { S3_BUCKET_CONFIG } = require('../config/index');
-const qrcodeSchema = require('../models/user');
+const QRcodeSchema = require('../models/user');
+const fs = require('fs');
+const csv = require('fast-csv');
+const utils = require('./utils');
 class QrCodeServices {
-    async generate(reqBody) {
-        try {
-           let userInDb = await qrcodeSchema.findOne({'phone':reqBody.phone});
-           if(userInDb){
-            return {
-                status:false,
-                msg:"For this number qr code already generated"
-            }
-           }
-           let user = await qrcodeSchema.create({...reqBody,isScaneDone:false});
-            let qrcodeBase64 = await QRCode.toDataURL(reqBody.phone);
-            let s3url = await this.imageUploads3(qrcodeBase64);
-            return {
-                status: true,
-                data: s3url,
-            }
-        } catch (error) {
-            console.log(error);
-            return {
-                status: false,
-                data: null,
-                msg: "Something went wrong"
-            }
-        }
-    }
+    async generate(req, csvUrl) {
+        let { file, body } = req;
+        let stream = fs.createReadStream(csvUrl)
+        let collectionCsv = [];
+        let userToProcess = [];
+        let csvFileStream = csv
+            .parse()
+            .on('data', function (data) {
+                collectionCsv.push(data)
+            })
+            .on('end', function () {
+                collectionCsv.shift();
+                async function processData() {
+                    for (const data of collectionCsv) {
+                        let phone = data[0];
+                        let name = data[1];
+                        let role = data[2];
+                        //collectionCsv.forEach(data=>{
+                        let userInDb = await QRcodeSchema.findOne({ 'phone': phone });
+                        if (!userInDb) {
+                            let qrcodeBase64 = await QRCode.toDataURL(phone);
+                            let s3url = await utils.utilsService(qrcodeBase64);
+                            userToProcess.push({
+                                name,
+                                phone,
+                                role,
+                                qrCode: s3url
+                            })
+                        }
+                        console.log(userInDb);
+                    };
+                    console.log(userToProcess);
+                    let insertRecords = await QRcodeSchema.insertMany(userToProcess);
+                    console.log('insertRecords', insertRecords);
+                }
+                processData();
 
+                // db.connect((error) => {
+                //     if (error) {
+                //         console.error(error)
+                //     } else {
+                //         let query = 'INSERT INTO users (id, name, email) VALUES ?'
+                //         db.query(query, [collectionCsv], (error, res) => {
+                //             console.log(error || res)
+                //         })
+                //     }
+                // })
+                fs.unlinkSync(csvUrl)
+            })
+        stream.pipe(csvFileStream)
+    }
     async scan(reqBody) {
         try {
-           let phone = Number(reqBody.phone);
-           let userDataInDb = await qrcodeSchema.findOne({'phone':phone});
-           if(!userDataInDb){
-            return {
-                status:false,
-                msg:"No records found"
+            console.log('reqBody', reqBody);
+            let phone = Number(reqBody.phone);
+            let userDataInDb = await QRcodeSchema.findOne({ 'phone': phone });
+            if (!userDataInDb) {
+                return {
+                    status: false,
+                    msg: "Invalid QR Code"
+                }
             }
-           } 
-           if(userDataInDb.isScaneDone){
-            return {
-                status:false,
-                msg:"This QR code is already used"
+            if (userDataInDb.isScaneDone) {
+                return {
+                    status: false,
+                    msg: "This QR code is already used"
+                }
             }
-           }
-          await qrcodeSchema.updateOne({'phone':phone},{$set:{isScaneDone:true}});
+            await qrcodeSchema.updateOne({ 'phone': phone }, { $set: { isScaneDone: true } });
             return {
                 status: true,
                 data: userDataInDb
@@ -63,22 +92,7 @@ class QrCodeServices {
             }
         }
     }
-    async imageUploads3(base64) {
-        const { AWS_ACCESS_KEY, AWS_SECRET_KEY, S3_BUCKET } = S3_BUCKET_CONFIG;
-        const base64Data = new Buffer.from(base64.replace(/^data:image\/\w+;base64,/, ""), 'base64');
-        const type = base64.split(';')[0].split('/')[1];
-        const s3 = new AWS.S3({
-            accessKeyId: AWS_ACCESS_KEY,
-            secretAccessKey: AWS_SECRET_KEY,
-        });
-        const uploadedImage = await s3.upload({
-            Bucket: S3_BUCKET,
-            Key: `${uuidv4()}.${type}`,
-            Body: base64Data,
-            ACL: 'public-read',
-        }).promise();
-        return uploadedImage.Location;
-    }
+
 }
 
 module.exports = QrCodeServices
