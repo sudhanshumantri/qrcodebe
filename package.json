@@ -23,6 +23,7 @@
     "multer": "^1.4.5-lts.1",
     "qrcode": "^1.5.3",
     "qrcode-reader": "^1.0.4",
+    "request": "^2.88.2",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

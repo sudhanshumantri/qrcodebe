@@ -4,7 +4,8 @@ const {
     v4: uuidv4,
 } = require('uuid');
 const AWS = require('aws-sdk');
-const { S3_BUCKET_CONFIG } = require('../config/index');
+var request = require('request');
+const { S3_BUCKET_CONFIG, FAST2SMS_KEY } = require('../config/index');
 const QRcodeSchema = require('../models/user');
 const fs = require('fs');
 const csv = require('fast-csv');
@@ -35,28 +36,50 @@ class QrCodeServices {
                             userToProcess.push({
                                 name,
                                 phone,
-                                status:role,
+                                status: role,
                                 qrCode: s3url
                             })
                         }
                         console.log(userInDb);
                     };
-                    console.log(userToProcess);
+                    // console.log(userToProcess);
                     let insertRecords = await QRcodeSchema.insertMany(userToProcess);
+                    userToProcess.map(users => {
+                        let body = {
+                            message: 'Your QR code has been generated. Use the link ' + users.qrCode + '. Thank You.',
+                            route: 'q',
+                            numbers: users.phone
+                        };
+                        console.log('body', body);
+                        request.post({
+                            url: 'https://www.fast2sms.com/dev/bulkV2',
+                            method: "POST",
+                            headers: {
+                                "content-type": "application/json",
+                                "authorization": FAST2SMS_KEY
+                            },
+                            body,
+                            json: true
+                        }, function (error, response, body) {
+                            if (error) {
+                                console.log(error)
+                            } else {
+                                console.log('body', body);
+                                // let token = body.Token;
+                                // fs.writeFileSync(process.cwd() + '/config/vasionToken.js', token);
+                                // resolve({ token: token })
+                            }
+                        })
+                        //make the api request and get it done man
+
+                    });
+                    return ({
+                        status: true
+                    })
+                    //here we will send the message
                     console.log('insertRecords', insertRecords);
                 }
-                processData();
-
-                // db.connect((error) => {
-                //     if (error) {
-                //         console.error(error)
-                //     } else {
-                //         let query = 'INSERT INTO users (id, name, email) VALUES ?'
-                //         db.query(query, [collectionCsv], (error, res) => {
-                //             console.log(error || res)
-                //         })
-                //     }
-                // })
+                return processData()
                 fs.unlinkSync(csvUrl)
             })
         stream.pipe(csvFileStream)
