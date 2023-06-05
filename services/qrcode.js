@@ -116,6 +116,55 @@ class QrCodeServices {
         }
     }
 
+    async generateQrCode(reqBody) {
+        try {
+            let userInDb = await QRcodeSchema.findOne({ 'phone': Number(reqBody.phone) });
+            if (userInDb) {
+                return {
+                    status: false,
+                    msg: "QR code already genetated for this number",
+                }
+            }
+            let qrcodeBase64 = await QRCode.toDataURL(reqBody.phone);
+            let s3url = await utils.utilsService(qrcodeBase64);
+            let userData = await QRcodeSchema.create({ ...reqBody, qrCode: s3url, isScaneDone: false });
+            let body = {
+                message: 'Your QR code has been generated. Use the link ' + userData.qrCode + '. Thank You.',
+                route: 'q',
+                numbers: userData.phone
+            };
+            console.log('body', body);
+            request.post({
+                url: 'https://www.fast2sms.com/dev/bulkV2',
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "authorization": FAST2SMS_KEY
+                },
+                body,
+                json: true
+            }, function (error, response, body) {
+                if (error) {
+                    console.log(error)
+                } else {
+                    console.log('body', body);
+                }
+            })
+            return {
+                status: true,
+                msg: 'QR Code generated successfully',
+                data: userData
+            }
+        } catch (error) {
+            console.log(error);
+            return {
+                status: false,
+                data: null,
+                msg: "Something went wrong"
+            }
+        }
+    }
+
 }
 
 module.exports = QrCodeServices

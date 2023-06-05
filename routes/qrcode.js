@@ -12,19 +12,20 @@ var path = require("path")
 //     }
 // })
 var storage = multer.diskStorage({
-    destination: (req, file, callBack) => {
-      callBack(null, './uploads/')
-    },
-    filename: (req, file, callBack) => {
-      callBack(
-        null,
-        file.fieldname + '-' + Date.now() + path.extname(file.originalname),
-      )
-    },
-  })
+  destination: (req, file, callBack) => {
+    callBack(null, './uploads/')
+  },
+  filename: (req, file, callBack) => {
+    callBack(
+      null,
+      file.fieldname + '-' + Date.now() + path.extname(file.originalname),
+    )
+  },
+})
 var uploads = multer({ storage: storage })
-router.post('/uploadcsv',uploads.single('uploadcsv'),qrCodeHandlers.generate);
+router.post('/uploadcsv', uploads.single('uploadcsv'), qrCodeHandlers.generate);
 router.post('/scan', qrCodeHandlers.scan);
 router.get('/ok', qrCodeHandlers.ok);
+router.post('/generate-qr-code', qrCodeHandlers.generateQrCode);
 
 module.exports = router;
