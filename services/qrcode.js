@@ -115,14 +115,34 @@ class QrCodeServices {
             }
         }
     }
-
     async generateQrCode(reqBody) {
         try {
             let userInDb = await QRcodeSchema.findOne({ 'phone': Number(reqBody.phone) });
             if (userInDb) {
+                let body = {
+                    message: 'Your QR code has been generated. Use the link ' + userInDb.qrCode + '. Thank You.',
+                    route: 'q',
+                    numbers: userInDb.phone
+                };
+                request.post({
+                    url: 'https://www.fast2sms.com/dev/bulkV2',
+                    method: "POST",
+                    headers: {
+                        "content-type": "application/json",
+                        "authorization": FAST2SMS_KEY
+                    },
+                    body,
+                    json: true
+                }, function (error, response, body) {
+                    if (error) {
+                        console.log(error)
+                    } else {
+                        console.log('body', body);
+                    }
+                })
                 return {
                     status: false,
-                    msg: "QR code already genetated for this number",
+                    msg: "QR code resent sucesfully",
                 }
             }
             let qrcodeBase64 = await QRCode.toDataURL(reqBody.phone);
@@ -133,7 +153,6 @@ class QrCodeServices {
                 route: 'q',
                 numbers: userData.phone
             };
-            console.log('body', body);
             request.post({
                 url: 'https://www.fast2sms.com/dev/bulkV2',
                 method: "POST",
