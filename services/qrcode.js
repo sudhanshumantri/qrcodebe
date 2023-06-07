@@ -5,7 +5,8 @@ const {
 } = require('uuid');
 const AWS = require('aws-sdk');
 var request = require('request');
-const { S3_BUCKET_CONFIG, FAST2SMS_KEY } = require('../config/index');
+const { S3_BUCKET_CONFIG, FAST2SMS_KEY, MSG_91_KEY } = require('../config/index');
+const MSG_91_SDK = require('api')('@msg91api/v5.0#6n91xmlhu4pcnz');
 const QRcodeSchema = require('../models/user');
 const fs = require('fs');
 const csv = require('fast-csv');
@@ -46,7 +47,7 @@ class QrCodeServices {
                     let insertRecords = await QRcodeSchema.insertMany(userToProcess);
                     userToProcess.map(users => {
                         let body = {
-                            message: 'Your QR code has been generated. Use the link ' + users.qrCode + '. Thank You.',
+                            message: 'Your access has been generated.' + users.qrCode + '. Thank You.',
                             route: 'q',
                             numbers: users.phone
                         };
@@ -120,10 +121,48 @@ class QrCodeServices {
             let userInDb = await QRcodeSchema.findOne({ 'phone': Number(reqBody.phone) });
             if (userInDb) {
                 let body = {
-                    message: 'Your QR code has been generated. Use the link ' + userInDb.qrCode + '. Thank You.',
+                    message: 'Your access has been generated.' + userInDb.qrCode + '. Thank You.',
                     route: 'q',
                     numbers: userInDb.phone
                 };
+                // MSG_91_SDK.auth(MSG_91_KEY);
+                // MSG_91_SDK.bulkSms({
+                //     template_id: '64807870d6fc053ba95138e2',
+                //     sender: 'PISTON',
+                //     recipients: [
+                //         { mobiles: userInDb.phone, VAR1: userInDb.qrCode },
+                //         //   {mobiles: '9198XXXXXXX', VAR1: 'VALUE 1', VAR3: 'VALUE 3'}
+                //     ]
+                // }).then(({ data }) => console.log(data))
+                //     .catch(err => console.error(err));
+                // request.post({
+                //     url: 'https://control.msg91.com/api/v5/flow/',
+                //     method: "POST",
+                //     headers: {
+                //         "content-type": "application/json",
+                //         "authkey": MSG_91_KEY
+                //     },
+                //     body: {
+                //         "template_id": "64807870d6fc053ba95138e2",
+                //         "sender": "PISTON",
+                //         "recipients": [
+                //             {
+                //                 "mobiles": '918530484193',
+                //                 // "mobiles": userInDb.phone,
+                //                 "VAR1": userInDb.qrCode,
+
+                //             },
+
+                //         ]
+                //     },
+                //     json: true
+                // }, function (error, response, body) {
+                //     if (error) {
+                //         console.log(error)
+                //     } else {
+                //         console.log('body', body);
+                //     }
+                // })
                 request.post({
                     url: 'https://www.fast2sms.com/dev/bulkV2',
                     method: "POST",
