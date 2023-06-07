@@ -6,7 +6,6 @@ const {
 const AWS = require('aws-sdk');
 var request = require('request');
 const { S3_BUCKET_CONFIG, FAST2SMS_KEY, MSG_91_KEY } = require('../config/index');
-const MSG_91_SDK = require('api')('@msg91api/v5.0#6n91xmlhu4pcnz');
 const QRcodeSchema = require('../models/user');
 const fs = require('fs');
 const csv = require('fast-csv');
